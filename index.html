@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PaintSmart</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    canvas {
+      border: 2px solid #000;
+      margin: 20px auto;
+      display: block;
+    }
+    .palette {
+      display: flex;
+      justify-content: center;
+      margin: 20px;
+    }
+    .color {
+      width: 40px;
+      height: 40px;
+      margin: 0 5px;
+      cursor: pointer;
+      border: 2px solid #000;
+    }
+    .instructions {
+      font-size: 1.2em;
+      margin: 20px;
+    }
+    .button {
+      padding: 10px 20px;
+      font-size: 1em;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>PaintSmart</h1>
+  <div class="instructions">Color all the circles!</div>
+  <canvas id="paintCanvas" width="400" height="400"></canvas>
+  <div class="palette" id="palette"></div>
+  <button class="button" id="checkButton">Check</button>
+  <script>
+    const canvas = document.getElementById('paintCanvas');
+    const ctx = canvas.getContext('2d');
+    const palette = document.getElementById('palette');
+    const checkButton = document.getElementById('checkButton');
+
+    const colors = ['red', 'blue', 'green', 'yellow', 'purple'];
+    let selectedColor = 'red';
+
+    // Draw the pattern
+    const pattern = [
+      { shape: 'circle', x: 100, y: 100, radius: 40, color: 'white' },
+      { shape: 'circle', x: 300, y: 100, radius: 40, color: 'white' },
+      { shape: 'square', x: 100, y: 300, size: 80, color: 'white' },
+      { shape: 'square', x: 300, y: 300, size: 80, color: 'white' },
+    ];
+
+    function drawPattern() {
+      pattern.forEach(item => {
+        ctx.fillStyle = item.color;
+        ctx.beginPath();
+        if (item.shape === 'circle') {
+          ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (item.shape === 'square') {
+          ctx.fillRect(item.x - item.size / 2, item.y - item.size / 2, item.size, item.size);
+        }
+        ctx.closePath();
+        ctx.stroke();
+      });
+    }
+
+    // Palette setup
+    colors.forEach(color => {
+      const colorDiv = document.createElement('div');
+      colorDiv.className = 'color';
+      colorDiv.style.backgroundColor = color;
+      colorDiv.addEventListener('click', () => {
+        selectedColor = color;
+      });
+      palette.appendChild(colorDiv);
+    });
+
+    // Painting logic
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      pattern.forEach(item => {
+        if (item.shape === 'circle') {
+          const distance = Math.sqrt((x - item.x) ** 2 + (y - item.y) ** 2);
+          if (distance <= item.radius) {
+            item.color = selectedColor;
+          }
+        } else if (item.shape === 'square') {
+          if (
+            x >= item.x - item.size / 2 &&
+            x <= item.x + item.size / 2 &&
+            y >= item.y - item.size / 2 &&
+            y <= item.y + item.size / 2
+          ) {
+            item.color = selectedColor;
+          }
+        }
+      });
+      drawPattern();
+    });
+
+    // Check logic
+    checkButton.addEventListener('click', () => {
+      const isCorrect = pattern.every(item => {
+        if (item.shape === 'circle') {
+          return item.color !== 'white';
+        }
+        return item.color === 'white';
+      });
+
+      if (isCorrect) {
+        alert('Great job! You colored all the circles!');
+      } else {
+        alert('Oops! Make sure only the circles are colored!');
+      }
+    });
+
+    // Initial draw
+    drawPattern();
+  </script>
+</body>
+</html>
