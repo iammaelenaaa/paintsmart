@@ -43,7 +43,7 @@
 </head>
 <body>
   <h1>PaintSmart</h1>
-  <div class="instructions">Color all the circles!</div>
+  <div class="instructions" id="instructions"></div>
   <canvas id="paintCanvas" width="400" height="400"></canvas>
   <div class="palette" id="palette"></div>
   <button class="button" id="checkButton">Check</button>
@@ -52,88 +52,138 @@
     const ctx = canvas.getContext('2d');
     const palette = document.getElementById('palette');
     const checkButton = document.getElementById('checkButton');
+    const instructions = document.getElementById('instructions');
 
     const colors = ['red', 'blue', 'green', 'yellow', 'purple'];
     let selectedColor = 'red';
+    let currentLevel = 0;
 
-    // Draw the pattern
-    const pattern = [
-      { shape: 'circle', x: 100, y: 100, radius: 40, color: 'white' },
-      { shape: 'circle', x: 300, y: 100, radius: 40, color: 'white' },
-      { shape: 'square', x: 100, y: 300, size: 80, color: 'white' },
-      { shape: 'square', x: 300, y: 300, size: 80, color: 'white' },
+    const levels = [
+      {
+        instructions: 'Color the apples red!',
+        pattern: [
+          { shape: 'apple', x: 100, y: 100, color: 'white' },
+          { shape: 'banana', x: 300, y: 100, color: 'white' },
+        ],
+        correct: (item) => item.shape === 'apple' && item.color === 'red',
+      },
+      {
+        instructions: 'Color the suns yellow!',
+        pattern: [
+          { shape: 'sun', x: 100, y: 100, color: 'white' },
+          { shape: 'moon', x: 300, y: 100, color: 'white' },
+          { shape: 'sun', x: 200, y: 300, color: 'white' },
+        ],
+        correct: (item) => item.shape === 'sun' && item.color === 'yellow',
+      },
+      {
+        instructions: 'Color the trees green!',
+        pattern: [
+          { shape: 'tree', x: 100, y: 100, color: 'white' },
+          { shape: 'bush', x: 300, y: 100, color: 'white' },
+          { shape: 'tree', x: 200, y: 300, color: 'white' },
+          { shape: 'flower', x: 300, y: 300, color: 'white' },
+        ],
+        correct: (item) => item.shape === 'tree' && item.color === 'green',
+      },
     ];
 
-    function drawPattern() {
-      pattern.forEach(item => {
+    function drawPattern(pattern) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      pattern.forEach((item) => {
         ctx.fillStyle = item.color;
         ctx.beginPath();
-        if (item.shape === 'circle') {
-          ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
+        if (item.shape === 'apple') {
+          ctx.arc(item.x, item.y, 40, 0, Math.PI * 2);
           ctx.fill();
-        } else if (item.shape === 'square') {
-          ctx.fillRect(item.x - item.size / 2, item.y - item.size / 2, item.size, item.size);
+        } else if (item.shape === 'banana') {
+          ctx.ellipse(item.x, item.y, 50, 20, Math.PI / 4, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (item.shape === 'sun') {
+          ctx.arc(item.x, item.y, 40, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (item.shape === 'moon') {
+          ctx.arc(item.x, item.y, 40, Math.PI / 2, Math.PI * 1.5);
+          ctx.fill();
+        } else if (item.shape === 'tree') {
+          ctx.moveTo(item.x, item.y - 40);
+          ctx.lineTo(item.x - 20, item.y + 40);
+          ctx.lineTo(item.x + 20, item.y + 40);
+          ctx.closePath();
+          ctx.fill();
+        } else if (item.shape === 'bush' || item.shape === 'flower') {
+          ctx.arc(item.x, item.y, 40, 0, Math.PI * 2);
+          ctx.fill();
         }
-        ctx.closePath();
         ctx.stroke();
       });
     }
 
-    // Palette setup
-    colors.forEach(color => {
-      const colorDiv = document.createElement('div');
-      colorDiv.className = 'color';
-      colorDiv.style.backgroundColor = color;
-      colorDiv.addEventListener('click', () => {
-        selectedColor = color;
+    function setupPalette() {
+      colors.forEach((color) => {
+        const colorDiv = document.createElement('div');
+        colorDiv.className = 'color';
+        colorDiv.style.backgroundColor = color;
+        colorDiv.addEventListener('click', () => {
+          selectedColor = color;
+        });
+        palette.appendChild(colorDiv);
       });
-      palette.appendChild(colorDiv);
-    });
+    }
 
-    // Painting logic
-    canvas.addEventListener('click', (e) => {
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+    function setupLevel(levelIndex) {
+      const level = levels[levelIndex];
+      instructions.textContent = level.instructions;
+      drawPattern(level.pattern);
 
-      pattern.forEach(item => {
-        if (item.shape === 'circle') {
-          const distance = Math.sqrt((x - item.x) ** 2 + (y - item.y) ** 2);
-          if (distance <= item.radius) {
-            item.color = selectedColor;
+      canvas.addEventListener('click', function paint(event) {
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+
+        level.pattern.forEach((item) => {
+          if (item.shape === 'apple' || item.shape === 'sun') {
+            const distance = Math.sqrt((x - item.x) ** 2 + (y - item.y) ** 2);
+            if (distance <= 40) {
+              item.color = selectedColor;
+            }
+          } else if (item.shape === 'banana') {
+            if (Math.abs(x - item.x) <= 50 && Math.abs(y - item.y) <= 20) {
+              item.color = selectedColor;
+            }
+          } else if (item.shape === 'tree') {
+            if (x >= item.x - 20 && x <= item.x + 20 && y >= item.y - 40 && y <= item.y + 40) {
+              item.color = selectedColor;
+            }
           }
-        } else if (item.shape === 'square') {
-          if (
-            x >= item.x - item.size / 2 &&
-            x <= item.x + item.size / 2 &&
-            y >= item.y - item.size / 2 &&
-            y <= item.y + item.size / 2
-          ) {
-            item.color = selectedColor;
-          }
-        }
+        });
+        drawPattern(level.pattern);
       });
-      drawPattern();
-    });
+    }
 
-    // Check logic
-    checkButton.addEventListener('click', () => {
-      const isCorrect = pattern.every(item => {
-        if (item.shape === 'circle') {
-          return item.color !== 'white';
-        }
-        return item.color === 'white';
-      });
+    function checkLevel(levelIndex) {
+      const level = levels[levelIndex];
+      const isCorrect = level.pattern.every((item) => level.correct(item));
 
       if (isCorrect) {
-        alert('Great job! You colored all the circles!');
+        alert('Great job! Moving to the next level!');
+        currentLevel++;
+        if (currentLevel < levels.length) {
+          setupLevel(currentLevel);
+        } else {
+          alert('Congratulations! You completed all levels!');
+        }
       } else {
-        alert('Oops! Make sure only the circles are colored!');
+        alert('Oops! Try again!');
       }
+    }
+
+    checkButton.addEventListener('click', () => {
+      checkLevel(currentLevel);
     });
 
-    // Initial draw
-    drawPattern();
+    setupPalette();
+    setupLevel(currentLevel);
   </script>
 </body>
 </html>
